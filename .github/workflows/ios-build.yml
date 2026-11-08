@@ -2,6 +2,12 @@ name: Build YMusic iOS IPA
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/ios-build.yml'
+      - 'iosApp/gen_xcodeproj.rb'
 
 permissions:
   contents: read
@@ -93,4 +99,4 @@ jobs:
           name: YMusic-iOS-IPA
           path: YMusicV4/build/ipa/YMusic-iOS.ipa
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 90
