@@ -8,6 +8,7 @@ on:
     paths:
       - '.github/workflows/ios-build.yml'
       - 'iosApp/gen_xcodeproj.rb'
+      - 'iosAppKotlin/build.gradle.kts'
 
 permissions:
   contents: read
