@@ -1,13 +1,7 @@
-  name: Build YMusic iOS IPA
+name: Build YMusic iOS IPA
 
 on:
   workflow_dispatch:
-
-  push:
-    branches:
-      - master
-    paths:
-      - '.github/workflows/ios-build.yml'
 
 permissions:
   contents: read
@@ -33,19 +27,19 @@ jobs:
           submodules: recursive
           fetch-depth: 1
 
-      - name: Select Xcode 26.4.1
+      - name: Select Xcode
         run: |
-          sudo xcode-select -s /Applications/Xcode_26.4.1.app/Contents/Developer
           xcodebuild -version
+          xcode-select -p
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
 
@@ -54,7 +48,7 @@ jobs:
           brew install nasm automake autoconf libtool pkg-config meson ninja cmake
           gem install xcodeproj --no-document
 
-            - name: Build FFmpeg for iOS
+      - name: Build FFmpeg for iOS
         working-directory: ffmpeg-build
         run: |
           chmod +x scripts/build-ios.sh
@@ -63,13 +57,6 @@ jobs:
       - name: Generate Xcode project
         working-directory: YMusicV4
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path("iosApp/gen_xcodeproj.rb")
-          s = p.read_text()
-          s = s.replace(" -PiosAllowUndefined=true", "")
-          p.write_text(s)
-          PY
           cd iosApp
           ruby gen_xcodeproj.rb
 
