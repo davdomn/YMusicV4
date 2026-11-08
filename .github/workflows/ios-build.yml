@@ -1,4 +1,4 @@
-name: Build YMusic iOS IPA
+  name: Build YMusic iOS IPA
 
 on:
   workflow_dispatch:
@@ -54,11 +54,11 @@ jobs:
           brew install nasm automake autoconf libtool pkg-config meson ninja cmake
           gem install xcodeproj --no-document
 
-      - name: Build FFmpeg for iOS
+            - name: Build FFmpeg for iOS
         working-directory: ffmpeg-build
         run: |
           chmod +x scripts/build-ios.sh
-          scripts/build-ios.sh
+          scripts/build-ios.sh iphoneos
 
       - name: Generate Xcode project
         working-directory: YMusicV4
