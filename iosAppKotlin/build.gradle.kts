@@ -53,6 +53,8 @@ kotlin {
             }
             linkerOpts("-framework", "MediaPlayer")
             linkerOpts("-framework", "LocalAuthentication")
+            // SQLDelight's native driver references the system SQLite library on Apple targets.
+            linkerOpts("-lsqlite3")
             // Same as :playground: cinterop linkerOpts is ignored; bake libav + VT here.
             val lib = ffmpegSlug?.let {
                 rootProject.projectDir.parentFile.resolve("ffmpeg-build/out/$it/lib")
