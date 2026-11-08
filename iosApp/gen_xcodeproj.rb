@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
-# Generates iosApp.xcodeproj — the iOS product shell that runs the shared Compose UI (:commonUi's
+# Generates iosApp.xcodeproj — the iOS product shell that runs the shared Compose UI (:iosAppKotlin's
 # YMusicApp framework) on a device. Gradle builds + embeds + signs the framework
-# (:commonUi:embedAndSignAppleFrameworkForXcode, -PkmpTargets=all so iosArm64 is configured on this
+# (:iosAppKotlin:embedAndSignAppleFrameworkForXcode, -PkmpTargets=all so iosArm64 is configured on this
 # Intel host); Xcode compiles iosApp/iOSApp.swift, which hosts MainViewControllerKt.MainViewController.
 #
 # REQUIRES XCODE 16+ (iOS 18 SDK): Compose Multiplatform 1.11.1's ui-uikit links against
@@ -49,9 +49,8 @@ gradle_phase.shell_script = <<~SH
   SIGN_ID="${EXPANDED_CODE_SIGN_IDENTITY:-}"
   unset EXPANDED_CODE_SIGN_IDENTITY
   # -PkmpTargets=all so iosArm64 / iosSimulatorArm64 are configured even on this Intel host.
-  # -PiosAllowUndefined=true lets Compose 1.11.1's iOS 26 symbols link on an older Xcode
-  # (@available-guarded, so unused below iOS 26). Drop it once building with Xcode 26.
-  ./gradlew --no-daemon :iosAppKotlin:embedAndSignAppleFrameworkForXcode -PkmpTargets=all -PiosAllowUndefined=true
+  # CI uses Xcode 26 with the iOS 26 SDK, so Compose UIKit symbols resolve normally.
+  ./gradlew --no-daemon :iosAppKotlin:embedAndSignAppleFrameworkForXcode -PkmpTargets=all
   FW="$TARGET_BUILD_DIR/$FRAMEWORKS_FOLDER_PATH/YMusicApp.framework"
   if [ -n "$SIGN_ID" ] && [ "$SIGN_ID" != "-" ] && [ -d "$FW" ]; then
     /usr/bin/codesign --force --sign "$SIGN_ID" --timestamp=none "$FW"
@@ -84,8 +83,8 @@ target.build_configurations.each do |config|
   s["ASSETCATALOG_COMPILER_APPICON_NAME"] = "AppIcon"
   s["ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS"] = "NO"
   # Compose MP has no iosX64, so the simulator path is arm64-only (Apple-Silicon hosts).
-  s["FRAMEWORK_SEARCH_PATHS[sdk=iphoneos*]"] = "$(SRCROOT)/../commonUi/build/bin/iosArm64/debugFramework"
-  s["FRAMEWORK_SEARCH_PATHS[sdk=iphonesimulator*]"] = "$(SRCROOT)/../commonUi/build/bin/iosSimulatorArm64/debugFramework"
+  s["FRAMEWORK_SEARCH_PATHS[sdk=iphoneos*]"] = "$(SRCROOT)/../iosAppKotlin/build/bin/iosArm64/debugFramework"
+  s["FRAMEWORK_SEARCH_PATHS[sdk=iphonesimulator*]"] = "$(SRCROOT)/../iosAppKotlin/build/bin/iosSimulatorArm64/debugFramework"
   s["OTHER_LDFLAGS"] = "-framework YMusicApp"
 end
 
