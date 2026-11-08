@@ -9,6 +9,7 @@
 # compiles for arm64 on any Xcode; only the framework LINK needs the iOS 18 SDK.
 #
 #   ruby gen_xcodeproj.rb
+require "fileutils"
 require "xcodeproj"
 
 HERE = File.dirname(File.expand_path(__FILE__))
