@@ -1,0 +1,109 @@
+name: Build YMusic iOS IPA
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/ios-build.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-ios:
+    name: Compile YMusic for iPhone
+    runs-on: macos-26
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout YMusic
+        uses: actions/checkout@v4
+        with:
+          path: YMusicV4
+
+      - name: Checkout FFmpeg
+        uses: actions/checkout@v4
+        with:
+          repository: ymusic-io/ffmpeg-build
+          ref: d0a89492c442dbca24dfabd044b866299f0a97b1
+          path: ffmpeg-build
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Select Xcode 26.4.1
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.4.1.app/Contents/Developer
+          xcodebuild -version
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: |
+          brew install nasm automake autoconf libtool pkg-config meson ninja cmake
+          gem install xcodeproj --no-document
+
+      - name: Build FFmpeg for iOS
+        working-directory: ffmpeg-build
+        run: |
+          chmod +x scripts/build-ios.sh
+          scripts/build-ios.sh
+
+      - name: Generate Xcode project
+        working-directory: YMusicV4
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("iosApp/gen_xcodeproj.rb")
+          s = p.read_text()
+          s = s.replace(" -PiosAllowUndefined=true", "")
+          p.write_text(s)
+          PY
+          cd iosApp
+          ruby gen_xcodeproj.rb
+
+      - name: Compile iOS application
+        working-directory: YMusicV4
+        run: |
+          xcodebuild \
+            -project iosApp/iosApp.xcodeproj \
+            -scheme iosApp \
+            -configuration Debug \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+
+      - name: Package IPA
+        working-directory: YMusicV4
+        run: |
+          mkdir -p build/ipa/Payload
+
+          cp -R build/DerivedData/Build/Products/Debug-iphoneos/iosApp.app \
+            build/ipa/Payload/
+
+          cd build/ipa
+          zip -qry YMusic-iOS.ipa Payload
+
+          test -s YMusic-iOS.ipa
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: YMusic-iOS-IPA
+          path: YMusicV4/build/ipa/YMusic-iOS.ipa
+          if-no-files-found: error
+          retention-days: 7
